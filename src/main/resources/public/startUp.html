@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>startup</title>
+    <script type="text/javascript" src="js/jquery1.11.2.min.js"></script>
+    <script type="text/javascript" src="js/jquery.form.js"></script>
+    <script type="text/javascript" src="js/template.js"></script>
+</head>
+<body>
+机器节点：
+<div>
+    <table border="1" id="nodesTable">
+        <tr>
+            <td>节点</td>
+            <td>分组</td>
+            <td>服务</td>
+            <td>操作</td>
+            <td>操作计数</td>
+        </tr>
+
+    </table>
+
+    <script id="nodesTemplate" type="text/html">
+
+        {{each nodes  node}}
+        {{each node.groups  group groupIndex}}
+        {{each group.serviceList  service serviceIndex}}
+        <tr>
+            {{if groupIndex==0&&serviceIndex==0}}
+            <td rowspan="{{node.totalSerivceNum}}">{{node.hostAddress}}</td>
+            {{/if}}
+            {{if serviceIndex==0}}
+            <td rowspan="{{group.serviceList.length}}">{{group.name}}</td>
+            {{/if}}
+            <!--<td>{{node.hostAddress}}</td>-->
+            <!--<td>{{group.name}}</td>-->
+            <td>{{service.name}}</td>
+            <td>
+                <button class="executeButton" onclick="executeScript('{{node.hostAddress}}','{{service.id}}',this)"></button>
+            </td>
+            <td></td>
+        </tr>
+        {{/each}}
+        {{/each}}
+        {{/each}}
+    </script>
+
+</div>
+</body>
+<script type="text/javascript">
+    var type = "restart";
+    $(function () {
+        $.ajax({
+            url: "getNodes",
+            success: function (nodes) {
+                var nodeHtml = template("nodesTemplate", {nodes: nodes});
+                $("#nodesTable").append(nodeHtml);
+                $(".executeButton").html("重启")
+            }
+        })
+    });
+
+    function executeScript(hostAddress, id,element) {
+        var serviceExecuteVo = new Object();
+        serviceExecuteVo.hostAddress = hostAddress;
+        serviceExecuteVo.id = id;
+        serviceExecuteVo.type = type;
+        $.ajax({
+            type: "post",
+            contentType: "application/json",
+            url: "executeScript",
+            data: JSON.stringify(serviceExecuteVo),
+            success: function (response) {
+                var countElement = $(element).parent().next();
+                if (countElement.html() == "") {
+                    countElement.html(1);
+                } else {
+                    countElement.html(Number(countElement.html()) + 1);
+                }
+            }
+        })
+    }
+
+</script>
+</html>
